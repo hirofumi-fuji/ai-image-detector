@@ -14,7 +14,7 @@ load_dotenv()
 # ページ設定
 st.set_page_config(page_title="画像著作権リスク判定ツール", page_icon="🔍", layout="wide")
 
-# ── APIキー読み込み（st.secrets優先、ローカルはos.getenvにフォールバック） ──
+# ── APIキー読み込み ──
 def _get_secret(key: str) -> str:
     try:
         return st.secrets[key]
@@ -23,13 +23,7 @@ def _get_secret(key: str) -> str:
 
 serpapi_key = _get_secret("SERPAPI_API_KEY")
 gemini_key = _get_secret("GEMINI_API_KEY")
-
-# ── サイドバー設定 ──
-with st.sidebar:
-    st.header("⚙️ 設定")
-    st.subheader("判定パラメータ")
-    phash_threshold = st.slider("pHash類似度閾値（CAUTION判定）", 0.5, 1.0, 0.85, 0.05)
-    max_lens_results = st.slider("Lens検索表示件数", 3, 10, 5)
+api_keys_ready = bool(serpapi_key) and bool(gemini_key)
 
 # ── メインエリア ──
 st.title("🔍 画像著作権リスク判定ツール")
@@ -40,10 +34,13 @@ st.warning(
     "最終判断は必ず人間が行い、必要に応じて法務専門家にご相談ください。"
 )
 
-# APIキーバリデーション
-api_keys_ready = bool(serpapi_key) and bool(gemini_key)
 if not api_keys_ready:
     st.error("⚠️ システム設定エラー: APIキーが構成されていません。管理者にお問い合わせください。")
+
+# 結果表示エリア（画面上部に確保）
+result_area = st.container()
+
+st.divider()
 
 # 画像アップロード
 uploaded_files = st.file_uploader(
@@ -59,8 +56,23 @@ if uploaded_files:
         with cols[i % len(cols)]:
             st.image(f, caption=f.name, use_container_width=True)
 
-# 分析開始ボタン
-if uploaded_files and st.button("▶ 分析開始", disabled=not api_keys_ready, type="primary"):
+# ── サイドバー ──
+with st.sidebar:
+    st.header("⚙️ 設定")
+    st.subheader("判定パラメータ")
+    phash_threshold = st.slider("pHash類似度閾値（CAUTION判定）", 0.5, 1.0, 0.85, 0.05)
+    max_lens_results = st.slider("Lens検索表示件数", 3, 10, 5)
+
+    st.divider()
+    run_analysis = st.button(
+        "▶ 分析開始",
+        disabled=not (uploaded_files and api_keys_ready),
+        type="primary",
+        use_container_width=True,
+    )
+
+# ── 分析処理 ──
+if run_analysis and uploaded_files:
     reports: list[ImageReport] = []
 
     for uploaded_file in uploaded_files:
@@ -119,76 +131,76 @@ if uploaded_files and st.button("▶ 分析開始", disabled=not api_keys_ready,
             )
             reports.append(report)
 
-    # ── 分析結果の表示 ──
-    st.divider()
-    st.subheader("■ 分析結果")
+    # ── 結果を画面上部に表示 ──
+    with result_area:
+        st.subheader("■ 分析結果")
 
-    for report in reports:
-        rec = report.overall_recommendation
-        if rec == "DANGER":
-            badge = "🔴 DANGER"
-        elif rec == "CAUTION":
-            badge = "🟡 CAUTION"
-        else:
-            badge = "🟢 SAFE"
-
-        with st.expander(f"{report.filename}  【{badge}】", expanded=(rec != "SAFE")):
-            # 総合判定バッジ
+        for report in reports:
+            rec = report.overall_recommendation
             if rec == "DANGER":
-                st.error("使用は避けてください — 既存作品と明らかに似ています")
+                badge = "🔴 DANGER"
             elif rec == "CAUTION":
-                st.warning("念のため確認を — 似ている部分が見つかりました")
+                badge = "🟡 CAUTION"
             else:
-                st.success("問題なさそうです — 既存作品との類似性は低いです")
+                badge = "🟢 SAFE"
 
-            # AI分析結果
-            st.markdown("**画像の特徴**")
-            ca = report.ai_analysis
-            st.write(ca.get("style_description", "（分析できませんでした）"))
+            with st.expander(f"{report.filename}  【{badge}】", expanded=(rec != "SAFE")):
+                # 総合判定バッジ
+                if rec == "DANGER":
+                    st.error("使用は避けてください — 既存作品と明らかに似ています")
+                elif rec == "CAUTION":
+                    st.warning("念のため確認を — 似ている部分が見つかりました")
+                else:
+                    st.success("問題なさそうです — 既存作品との類似性は低いです")
 
-            artists = ca.get("similar_artists", [])
-            if artists:
-                st.markdown("**似ているアーティスト**")
-                st.write("、".join(artists))
+                # AI分析結果
+                st.markdown("**画像の特徴**")
+                ca = report.ai_analysis
+                st.write(ca.get("style_description", "（分析できませんでした）"))
 
-            risks = ca.get("risk_factors", [])
-            if risks:
-                st.markdown("**注意ポイント**")
-                for risk in risks:
-                    st.write(f"- {risk}")
+                artists = ca.get("similar_artists", [])
+                if artists:
+                    st.markdown("**似ているアーティスト**")
+                    st.write("、".join(artists))
 
+                risks = ca.get("risk_factors", [])
+                if risks:
+                    st.markdown("**注意ポイント**")
+                    for risk in risks:
+                        st.write(f"- {risk}")
+
+                st.divider()
+
+                # Google Lens検索結果
+                st.markdown("**ネット上の類似画像**")
+                if report.lens_results:
+                    for i, result in enumerate(report.lens_results, 1):
+                        title = result.get("title", "不明")
+                        link = result.get("link", "")
+                        source = result.get("source", "")
+                        st.markdown(f"{i}. [{title}]({link}) - {source}")
+                else:
+                    st.write("似ている画像は見つかりませんでした")
+
+                st.divider()
+
+                # pHash類似度
+                st.markdown("**画像の一致度（数値が高いほど似ている）**")
+                valid_scores = [s for s in report.phash_scores if s.get("similarity", -1) >= 0]
+                if valid_scores:
+                    top = max(valid_scores, key=lambda s: s["similarity"])
+                    pct = int(top["similarity"] * 100)
+                    st.write(f"最も似ている画像との一致度: **{pct}%** （{top.get('title', top.get('url', 'N/A'))}）")
+                else:
+                    st.write("比較できる画像がありませんでした")
+
+        # CSVダウンロード
+        if reports:
             st.divider()
-
-            # Google Lens検索結果
-            st.markdown("**ネット上の類似画像**")
-            if report.lens_results:
-                for i, result in enumerate(report.lens_results, 1):
-                    title = result.get("title", "不明")
-                    link = result.get("link", "")
-                    source = result.get("source", "")
-                    st.markdown(f"{i}. [{title}]({link}) - {source}")
-            else:
-                st.write("似ている画像は見つかりませんでした")
-
-            st.divider()
-
-            # pHash類似度
-            st.markdown("**画像の一致度（数値が高いほど似ている）**")
-            valid_scores = [s for s in report.phash_scores if s.get("similarity", -1) >= 0]
-            if valid_scores:
-                top = max(valid_scores, key=lambda s: s["similarity"])
-                pct = int(top["similarity"] * 100)
-                st.write(f"最も似ている画像との一致度: **{pct}%** （{top.get('title', top.get('url', 'N/A'))}）")
-            else:
-                st.write("比較できる画像がありませんでした")
-
-    # CSVダウンロード
-    if reports:
-        st.divider()
-        csv_data = reports_to_csv(reports)
-        st.download_button(
-            label="📥 レポートCSVダウンロード",
-            data=csv_data,
-            file_name="copyright_check_report.csv",
-            mime="text/csv",
-        )
+            csv_data = reports_to_csv(reports)
+            st.download_button(
+                label="📥 レポートCSVダウンロード",
+                data=csv_data,
+                file_name="copyright_check_report.csv",
+                mime="text/csv",
+            )
