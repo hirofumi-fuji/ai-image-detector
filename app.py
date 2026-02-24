@@ -18,11 +18,16 @@ st.set_page_config(page_title="画像著作権リスク判定ツール", page_ic
 def _get_secret(key: str) -> str:
     try:
         return st.secrets[key]
-    except (KeyError, FileNotFoundError):
+    except Exception:
         return os.getenv(key, "")
 
 serpapi_key = _get_secret("SERPAPI_API_KEY")
 gemini_key = _get_secret("GEMINI_API_KEY")
+
+# デバッグ（原因特定後に削除）
+with st.sidebar:
+    st.caption(f"SERP: {'SET' if serpapi_key else 'EMPTY'} / GEMINI: {'SET' if gemini_key else 'EMPTY'}")
+    st.caption(f"secrets keys: {list(st.secrets) if hasattr(st.secrets, '__iter__') else 'N/A'}")
 
 # ── サイドバー設定 ──
 with st.sidebar:
