@@ -1,6 +1,5 @@
-import base64
 import json
-import google.generativeai as genai
+from google import genai
 from PIL import Image
 from io import BytesIO
 
@@ -35,12 +34,14 @@ def analyze_art_style(image_bytes: bytes, api_key: str) -> dict:
             "recommendation": str
         }
     """
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-2.0-flash")
+    client = genai.Client(api_key=api_key)
 
     image = Image.open(BytesIO(image_bytes))
 
-    response = model.generate_content([ANALYSIS_PROMPT, image])
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=[ANALYSIS_PROMPT, image],
+    )
 
     return _parse_response(response.text)
 

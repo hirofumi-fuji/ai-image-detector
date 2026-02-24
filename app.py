@@ -14,21 +14,13 @@ load_dotenv()
 # ページ設定
 st.set_page_config(page_title="画像著作権リスク判定ツール", page_icon="🔍", layout="wide")
 
+# ── APIキー読み込み（環境変数から直接取得） ──
+serpapi_key = os.getenv("SERPAPI_API_KEY", "")
+gemini_key = os.getenv("GEMINI_API_KEY", "")
+
 # ── サイドバー設定 ──
 with st.sidebar:
     st.header("⚙️ 設定")
-    serpapi_key = st.text_input(
-        "SerpApi APIキー",
-        type="password",
-        value=os.getenv("SERPAPI_API_KEY", ""),
-    )
-    gemini_key = st.text_input(
-        "Gemini APIキー",
-        type="password",
-        value=os.getenv("GEMINI_API_KEY", ""),
-    )
-
-    st.divider()
     st.subheader("判定パラメータ")
     phash_threshold = st.slider("pHash類似度閾値（CAUTION判定）", 0.5, 1.0, 0.85, 0.05)
     max_lens_results = st.slider("Lens検索表示件数", 3, 10, 5)
@@ -45,7 +37,7 @@ st.warning(
 # APIキーバリデーション
 api_keys_ready = bool(serpapi_key) and bool(gemini_key)
 if not api_keys_ready:
-    st.info("サイドバーでAPIキー（SerpApi / Gemini）を設定してください。")
+    st.error("⚠️ システム設定エラー: APIキーが構成されていません。管理者にお問い合わせください。")
 
 # 画像アップロード
 uploaded_files = st.file_uploader(
