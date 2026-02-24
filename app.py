@@ -74,62 +74,79 @@ with st.sidebar:
 # ── 分析処理 ──
 if run_analysis and uploaded_files:
     reports: list[ImageReport] = []
+    total = len(uploaded_files)
 
-    for uploaded_file in uploaded_files:
+    # 画面上部に進捗バーとステータスを表示
+    with result_area:
+        progress_header = st.empty()
+        progress_bar = st.progress(0)
+        progress_detail = st.empty()
+
+    for idx, uploaded_file in enumerate(uploaded_files):
         image_bytes = uploaded_file.read()
         target_image = Image.open(BytesIO(image_bytes))
 
-        with st.status(f"分析中: {uploaded_file.name}", expanded=True):
-            # ── 1. Google Lens検索 ──
-            st.write("🔎 Google Lens検索を実行中...")
-            try:
-                lens_data = search_similar_images(image_bytes, serpapi_key)
-                lens_results = lens_data.get("visual_matches", [])[:max_lens_results]
-            except Exception as e:
-                st.error(f"Google Lens検索エラー: {e}")
-                lens_results = []
+        progress_header.info(f"🔄 分析中... ({idx + 1}/{total}) {uploaded_file.name}")
 
-            # ── 2. Gemini画風分析 ──
-            st.write("🎨 AI画風分析を実行中...")
+        # ── 1. Google Lens検索 ──
+        progress_detail.caption("🔎 Google Lens検索を実行中...")
+        progress_bar.progress((idx * 4 + 1) / (total * 4))
+        try:
+            lens_data = search_similar_images(image_bytes, serpapi_key)
+            lens_results = lens_data.get("visual_matches", [])[:max_lens_results]
+        except Exception as e:
+            st.error(f"Google Lens検索エラー: {e}")
+            lens_results = []
+
+        # ── 2. Gemini画風分析 ──
+        progress_detail.caption("🎨 AI画風分析を実行中...")
+        progress_bar.progress((idx * 4 + 2) / (total * 4))
+        try:
+            gemini_result = analyze_art_style(image_bytes, gemini_key)
+        except Exception as e:
+            # リトライ1回
             try:
                 gemini_result = analyze_art_style(image_bytes, gemini_key)
-            except Exception as e:
+            except Exception:
                 st.warning(f"AI画風分析は利用できませんでした: {e}")
-                # リトライ1回
-                try:
-                    gemini_result = analyze_art_style(image_bytes, gemini_key)
-                except Exception:
-                    gemini_result = {
-                        "similar_artists": [],
-                        "style_description": "分析不可",
-                        "risk_factors": [],
-                        "recommendation": "CAUTION",
-                    }
+                gemini_result = {
+                    "similar_artists": [],
+                    "style_description": "分析不可",
+                    "risk_factors": [],
+                    "recommendation": "CAUTION",
+                }
 
-            # ── 3. pHash計算 ──
-            st.write("🔢 pHash類似度を計算中...")
-            phash_scores = []
-            for match in lens_results:
-                thumbnail_url = match.get("thumbnail", "")
-                if not thumbnail_url:
-                    continue
-                similarity = calculate_phash_similarity(target_image, thumbnail_url)
-                phash_scores.append({
-                    "url": match.get("link", ""),
-                    "title": match.get("title", ""),
-                    "similarity": similarity,
-                })
+        # ── 3. pHash計算 ──
+        progress_detail.caption("🔢 pHash類似度を計算中...")
+        progress_bar.progress((idx * 4 + 3) / (total * 4))
+        phash_scores = []
+        for match in lens_results:
+            thumbnail_url = match.get("thumbnail", "")
+            if not thumbnail_url:
+                continue
+            similarity = calculate_phash_similarity(target_image, thumbnail_url)
+            phash_scores.append({
+                "url": match.get("link", ""),
+                "title": match.get("title", ""),
+                "similarity": similarity,
+            })
 
-            # ── 4. レポート生成 ──
-            st.write("📝 レポートを生成中...")
-            report = build_report(
-                filename=uploaded_file.name,
-                lens_results=lens_results,
-                ai_analysis=gemini_result,
-                phash_scores=phash_scores,
-                phash_threshold=phash_threshold,
-            )
-            reports.append(report)
+        # ── 4. レポート生成 ──
+        progress_detail.caption("📝 レポートを生成中...")
+        progress_bar.progress((idx * 4 + 4) / (total * 4))
+        report = build_report(
+            filename=uploaded_file.name,
+            lens_results=lens_results,
+            ai_analysis=gemini_result,
+            phash_scores=phash_scores,
+            phash_threshold=phash_threshold,
+        )
+        reports.append(report)
+
+    # 進捗表示をクリア
+    progress_header.empty()
+    progress_bar.empty()
+    progress_detail.empty()
 
     # ── 結果を画面上部に表示 ──
     with result_area:

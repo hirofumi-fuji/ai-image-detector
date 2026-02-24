@@ -34,6 +34,8 @@ def search_similar_images(image_bytes: bytes, api_key: str) -> dict:
     params = {
         "engine": "google_lens",
         "url": image_url,
+        "hl": "ja",
+        "country": "jp",
         "api_key": api_key,
     }
     search = GoogleSearch(params)
