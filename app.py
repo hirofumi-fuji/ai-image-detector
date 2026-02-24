@@ -15,8 +15,14 @@ load_dotenv()
 st.set_page_config(page_title="画像著作権リスク判定ツール", page_icon="🔍", layout="wide")
 
 # ── APIキー読み込み（st.secrets優先、ローカルはos.getenvにフォールバック） ──
-serpapi_key = st.secrets.get("SERPAPI_API_KEY", "") or os.getenv("SERPAPI_API_KEY", "")
-gemini_key = st.secrets.get("GEMINI_API_KEY", "") or os.getenv("GEMINI_API_KEY", "")
+def _get_secret(key: str) -> str:
+    try:
+        return st.secrets[key]
+    except (KeyError, FileNotFoundError):
+        return os.getenv(key, "")
+
+serpapi_key = _get_secret("SERPAPI_API_KEY")
+gemini_key = _get_secret("GEMINI_API_KEY")
 
 # ── サイドバー設定 ──
 with st.sidebar:
