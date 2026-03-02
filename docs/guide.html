@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head><meta charset="UTF-8"><title>画像著作権リスク判定ツール 利用ガイド＆運用ルール</title></head>
+<body>
+<h1>画像著作権リスク判定ツール<br>利用ガイド＆運用ルール</h1>
+<p style="color:gray;">最終更新日: 2026年3月2日　｜　管理部門配布用</p>
+
+<hr>
+
+<h2>1. ツールの概要</h2>
+<p>本ツールは、業務で使用する画像（主にAI生成画像）の<b>著作権リスクを自動判定</b>するためのWebアプリケーションです。</p>
+<p>以下の3つの分析を組み合わせて、総合的にリスクを判定します。</p>
+
+<table border="1" cellpadding="8" cellspacing="0">
+<tr style="background-color:#f0f0f0;"><th>分析手法</th><th>内容</th></tr>
+<tr><td><b>Google Lens検索</b></td><td>インターネット上の類似画像を自動検索し、既存の作品と一致するものがないか調べます。</td></tr>
+<tr><td><b>AI画風分析（Gemini）</b></td><td>AIが画像の画風を分析し、有名アーティストや既存キャラクターとの類似性を判定します。</td></tr>
+<tr><td><b>pHash類似度</b></td><td>画像のハッシュ値を数値的に比較し、既存画像との一致度をパーセンテージで表示します。</td></tr>
+</table>
+
+<h2>2. 判定結果の見方</h2>
+
+<table border="1" cellpadding="8" cellspacing="0" width="100%">
+<tr style="background-color:#f0f0f0;"><th width="15%">判定</th><th width="35%">意味</th><th width="50%">画面表示</th></tr>
+<tr style="background-color:#e8f5e9;"><td><b>SAFE</b></td><td>既存作品との類似性が低く、問題なさそうです。</td><td>緑色で表示されます。</td></tr>
+<tr style="background-color:#fff8e1;"><td><b>CAUTION</b></td><td>似ている部分が見つかりました。念のため確認が必要です。</td><td>黄色で表示されます。</td></tr>
+<tr style="background-color:#ffebee;"><td><b>DANGER</b></td><td>既存作品と明らかに似ており、使用を避けるべきです。</td><td>赤色で表示されます。</td></tr>
+</table>
+
+<p><b>※ 注意:</b> AI生成画像は多くの場合 CAUTION 判定となります。これはAIが学習データの影響を受けるためであり、必ずしも著作権侵害を意味するものではありません。</p>
+
+<h2>3. 使い方</h2>
+<ol>
+<li>ツールのURL（下記）にアクセスします。</li>
+<li>「判定する画像をアップロード」エリアに画像をドラッグ＆ドロップ、またはクリックして選択します。（複数画像の同時アップロード可）</li>
+<li>右側の「分析開始」ボタンをクリックします。</li>
+<li>分析が完了すると、各画像の判定結果が表示されます。</li>
+<li>必要に応じて「レポートCSVダウンロード」で記録を保存します。</li>
+</ol>
+<p><b>ツールURL:</b> （Vercelデプロイ後のURLをここに記載）</p>
+
+<hr>
+
+<h1>運用ルール</h1>
+
+<h2>4. 判定別の対応フロー</h2>
+
+<h3>● SAFE（緑）の場合</h3>
+<table border="1" cellpadding="8" cellspacing="0" width="100%">
+<tr><td width="20%"><b>対応</b></td><td>そのまま使用OK</td></tr>
+<tr><td><b>承認</b></td><td>不要</td></tr>
+<tr><td><b>記録</b></td><td>CSVレポートをダウンロードし、案件フォルダに保存</td></tr>
+</table>
+
+<h3>● CAUTION（黄）の場合</h3>
+<p><b>用途によって対応が異なります。</b></p>
+
+<table border="1" cellpadding="8" cellspacing="0" width="100%">
+<tr style="background-color:#f0f0f0;"><th>用途</th><th>対応</th><th>承認</th></tr>
+<tr>
+<td><b>社内利用</b><br>（企画書、ラフ案、社内プレゼン、提案資料の素案）</td>
+<td>下記セルフチェックリストを確認のうえ、使用OK</td>
+<td><b>不要</b></td>
+</tr>
+<tr>
+<td><b>対外利用</b><br>（クライアント納品物、広告出稿、SNS投稿、Webサイト掲載、印刷物）</td>
+<td>セルフチェック＋上長確認</td>
+<td><b>必要</b>（上長またはリーガル担当）</td>
+</tr>
+</table>
+
+<h3>● DANGER（赤）の場合</h3>
+<table border="1" cellpadding="8" cellspacing="0" width="100%">
+<tr><td width="20%"><b>対応</b></td><td><b>使用禁止</b> — いかなる用途でも使用しないでください。</td></tr>
+<tr><td><b>代替</b></td><td>別の画像を生成し直す、またはストックフォトを使用してください。</td></tr>
+</table>
+
+<h2>5. CAUTION時のセルフチェックリスト</h2>
+<p>CAUTION判定の画像を使用する際は、以下の項目をすべて確認してください。</p>
+
+<table border="1" cellpadding="8" cellspacing="0" width="100%">
+<tr style="background-color:#f0f0f0;"><th width="5%">No.</th><th>確認項目</th><th width="10%">チェック</th></tr>
+<tr><td>1</td><td>「似ているアーティスト」に表示された作家の作品と見比べ、明らかな模倣ではないことを確認した</td><td>□</td></tr>
+<tr><td>2</td><td>「ネット上の類似画像」のリンク先を確認し、既存の著作物のコピーではないことを確認した</td><td>□</td></tr>
+<tr><td>3</td><td>画像の一致度が85%を超えている場合、該当する類似画像と目視で比較した</td><td>□</td></tr>
+<tr><td>4</td><td>特定のキャラクター、ロゴ、商標に酷似した要素が含まれていないことを確認した</td><td>□</td></tr>
+<tr><td>5</td><td>クライアントのブランドガイドラインに抵触しないことを確認した</td><td>□</td></tr>
+</table>
+
+<h2>6. 記録の保管</h2>
+<p>判定結果は必ずCSVレポートとしてダウンロードし、以下の場所に保管してください。</p>
+<ul>
+<li><b>保管場所:</b> 案件フォルダ内の「著作権チェック」フォルダ</li>
+<li><b>ファイル名:</b> copyright_check_report_YYYYMMDD.csv</li>
+<li><b>保管期限:</b> 案件終了後2年間</li>
+</ul>
+<p>万が一のクレーム対応時に「事前にチェックを実施した」ことの証跡となります。</p>
+
+<h2>7. 対応フローチャート</h2>
+<p>画像をアップロード → ツールで判定</p>
+<ul>
+<li><b>SAFE</b> → CSVを保存 → 使用OK</li>
+<li><b>CAUTION</b> → セルフチェック実施
+  <ul>
+    <li>社内利用 → チェック通過で使用OK</li>
+    <li>対外利用 → 上長承認 → 使用OK / 差し替え</li>
+  </ul>
+</li>
+<li><b>DANGER</b> → 使用禁止 → 別画像で再生成</li>
+</ul>
+
+<h2>8. よくある質問（FAQ）</h2>
+
+<table border="1" cellpadding="8" cellspacing="0" width="100%">
+<tr style="background-color:#f0f0f0;"><th width="40%">質問</th><th>回答</th></tr>
+<tr><td>AI生成画像はほとんどCAUTIONになるのですが？</td><td>正常な動作です。AIは既存の作品データを学習しているため、何らかの類似性が検出されることが多いです。セルフチェックリストを確認のうえ、問題なければ使用できます。</td></tr>
+<tr><td>SAFEなら100%安全ですか？</td><td>いいえ。本ツールは参考情報の提示であり、法的な安全性を保証するものではありません。ただし、リスクが低いことの一つの目安にはなります。</td></tr>
+<tr><td>ストックフォト（Shutterstock等）もチェックすべきですか？</td><td>正規ライセンスで購入したストックフォトは原則チェック不要です。ただし、AI生成のストックフォトを使用する場合はチェックを推奨します。</td></tr>
+<tr><td>分析結果が出るまでどのくらいかかりますか？</td><td>1画像あたり約10〜20秒です。複数画像は順次処理されます。</td></tr>
+<tr><td>対応ブラウザは？</td><td>Chrome、Edge、Safariの最新版を推奨します。</td></tr>
+</table>
+
+<h2>9. 免責事項</h2>
+<p>本ツールおよび本運用ルールは、著作権リスクの<b>参考情報を提供するもの</b>であり、著作権侵害の有無を法的に保証するものではありません。最終的な判断は担当者および上長が行い、必要に応じて法務専門家にご相談ください。</p>
+
+<hr>
+<p style="color:gray; font-size:small;">本資料に関するお問い合わせ: （管理部門の連絡先を記載）</p>
+
+</body>
+</html>
