@@ -1,17 +1,24 @@
-import { getJson } from "serpapi";
 import type { LensData, LensMatch } from "./types";
 
 export async function searchSimilarImages(
   imageUrl: string,
   apiKey: string
 ): Promise<LensData> {
-  const results = await getJson({
+  const params = new URLSearchParams({
     engine: "google_lens",
     url: imageUrl,
     hl: "ja",
     country: "jp",
     api_key: apiKey,
   });
+
+  const resp = await fetch(`https://serpapi.com/search.json?${params}`);
+
+  if (!resp.ok) {
+    throw new Error(`SerpApi error: ${resp.status}`);
+  }
+
+  const results = await resp.json();
 
   if (results.error) {
     throw new Error(results.error);
