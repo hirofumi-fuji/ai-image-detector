@@ -55,6 +55,7 @@ export default function ImageUploader({ files, onFilesChange, disabled }: Props)
           画像をドラッグ＆ドロップ、またはクリックして選択
         </p>
         <p className="text-gray-500 text-sm">PNG, JPG, JPEG, WebP</p>
+        <p className="text-gray-500 text-xs mt-1">※ 1ファイル5MB以下推奨（カメラ撮影の高解像度画像はリサイズしてください）</p>
         <input
           ref={inputRef}
           type="file"
@@ -76,6 +77,12 @@ export default function ImageUploader({ files, onFilesChange, disabled }: Props)
                 className="w-full h-28 object-cover rounded-lg border border-gray-700"
               />
               <p className="text-xs text-gray-400 mt-1 truncate">{file.name}</p>
+              <p className={`text-xs mt-0.5 ${file.size > 5 * 1024 * 1024 ? "text-red-400" : "text-gray-500"}`}>
+                {file.size > 1024 * 1024
+                  ? `${(file.size / (1024 * 1024)).toFixed(1)}MB`
+                  : `${Math.round(file.size / 1024)}KB`}
+                {file.size > 5 * 1024 * 1024 && " ⚠ サイズ超過"}
+              </p>
               {!disabled && (
                 <button
                   onClick={(e) => {
