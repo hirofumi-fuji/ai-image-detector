@@ -135,7 +135,13 @@ export default function ResultCard({ report }: Props) {
             {topScore ? (
               <p className="text-gray-400 text-sm">
                 最も似ている画像との一致度:{" "}
-                <span className="font-bold text-gray-200">
+                <span className={`font-bold ${
+                  topScore.similarity >= 0.80
+                    ? "text-red-400"
+                    : topScore.similarity >= 0.70
+                    ? "text-yellow-400"
+                    : "text-green-400"
+                }`}>
                   {Math.round(topScore.similarity * 100)}%
                 </span>{" "}
                 （{topScore.title || topScore.url || "N/A"}）

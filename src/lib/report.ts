@@ -14,7 +14,22 @@ export function determineRecommendation(
 ): Recommendation {
   const aiRec = aiAnalysis.recommendation || "SAFE";
 
+  // pHash最大値を取得
+  const validScores = phashScores
+    .map((s) => s.similarity)
+    .filter((s) => s >= 0);
+  const maxPhash = validScores.length > 0 ? Math.max(...validScores) : 0;
+
+  // pHash 80%以上 → DANGER
+  if (maxPhash >= 0.80) return "DANGER";
+
+  // AI判定がDANGER → DANGER
   if (aiRec === "DANGER") return "DANGER";
+
+  // pHash 70%以上 → CAUTION
+  if (maxPhash >= 0.70) return "CAUTION";
+
+  // AI判定がCAUTION → CAUTION
   if (aiRec === "CAUTION") return "CAUTION";
 
   // lens_resultsのタイトルにアーティスト名が含まれるかチェック
@@ -28,14 +43,6 @@ export function determineRecommendation(
         }
       }
     }
-  }
-
-  // pHash最大値チェック
-  const validScores = phashScores
-    .map((s) => s.similarity)
-    .filter((s) => s >= 0);
-  if (validScores.length > 0 && Math.max(...validScores) > phashThreshold) {
-    return "CAUTION";
   }
 
   return "SAFE";

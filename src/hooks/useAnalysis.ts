@@ -80,7 +80,13 @@ export function useAnalysis(): UseAnalysisReturn {
               fd.append("file", file);
               return fd;
             })(),
-          }).then((r) => r.json());
+          }).then(async (r) => {
+            if (!r.ok) {
+              const text = await r.text().catch(() => "Upload failed");
+              return { error: `アップロード失敗 (${r.status}): ${text}` };
+            }
+            return r.json();
+          });
 
           setProgress({
             currentImage: idx + 1,
@@ -93,7 +99,13 @@ export function useAnalysis(): UseAnalysisReturn {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ imageBase64: base64, mimeType: file.type }),
-          }).then((r) => r.json());
+          }).then(async (r) => {
+            if (!r.ok) {
+              const text = await r.text().catch(() => "Analysis failed");
+              return { error: `AI分析失敗 (${r.status}): ${text}` };
+            }
+            return r.json();
+          });
 
           const [uploadResult, aiResult] = await Promise.all([
             uploadPromise,
@@ -128,9 +140,11 @@ export function useAnalysis(): UseAnalysisReturn {
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ imageUrl: uploadResult.url }),
             });
-            const lensJson = await lensResp.json();
-            if (!lensJson.error) {
-              lensData = lensJson;
+            if (lensResp.ok) {
+              const lensJson = await lensResp.json();
+              if (!lensJson.error) {
+                lensData = lensJson;
+              }
             }
           } catch {
             // Lens検索失敗は続行
@@ -161,9 +175,11 @@ export function useAnalysis(): UseAnalysisReturn {
                   })),
                 }),
               });
-              const phashJson = await phashResp.json();
-              if (!phashJson.error) {
-                phashScores = phashJson.scores;
+              if (phashResp.ok) {
+                const phashJson = await phashResp.json();
+                if (!phashJson.error) {
+                  phashScores = phashJson.scores;
+                }
               }
             } catch {
               // pHash失敗は続行
